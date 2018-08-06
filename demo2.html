@@ -3,13 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>MVVM 单向绑定</title>
+    <title>MVVM 双向绑定</title>
 </head>
 
 <body>
 
     <div id="app">
         <h1>{{name}} 's age is {{age}}</h1>
+        <input  v-model="name" type="text">
     </div>
     <script>
 
@@ -110,15 +111,16 @@
             }
             traverse(node) {
                 if (node.nodeType === 1) {
+                    this.renderNode(node)
                     node.childNodes.forEach((childNode) => {
                         this.traverse(childNode)
                     })
 
                 } else if (node.nodeType === 3) { //纯文本
-                    this.render(node)
+                    this.renderText(node)
                 }
             }
-            render(node) {
+            renderText(node) {
                 //Reg
                 let reg = /{{(.+?)}}/g
                 let match
@@ -130,7 +132,25 @@
                         node.nodeValue = node.nodeValue.replace(oldVal, val)
                     })
                 }
-
+            }
+            //处理指令
+            renderNode(node){
+                let attrs = [...node.attributes]
+                attrs.forEach(attr=>{  //attr.name 是属性的名字 如v-model attr.value就是name
+                    if(this.isDirective(attr.name)){
+                        let key =attr.value
+                        node.value = this.$data[key]
+                        new Observer(this,key,function(newVal){
+                            node.nodeValue = newVal
+                        })
+                        node.oninput = (e)=>{
+                            this.$data[key] = e.target.value
+                        }
+                    }
+                })
+            }
+            isDirective(attrName){
+                return attrName === 'v-model'
             }
         }          //mvvm框架，主要是查找并且替换
 
