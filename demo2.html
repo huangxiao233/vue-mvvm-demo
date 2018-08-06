@@ -10,7 +10,7 @@
 
     <div id="app">
         <h1>{{name}} 's age is {{age}}</h1>
-        <input  v-model="name" type="text">
+        <input v-model="name" type="text">
     </div>
     <script>
 
@@ -60,7 +60,7 @@
 
             }
             notify() {
-               this.observers.forEach((observer) => {
+                this.observers.forEach((observer) => {
                     observer.update()
                 })
             }
@@ -102,15 +102,31 @@
                 this.compile(opt)
             }
             init(opt) {
-                this.$data = opt.data
-                this.$el = document.querySelector(opt.el)
+                this.$data = opt.data || {}
+                this.$el = document.querySelector(opt.el) 
                 this.observers = []
+                this.$methods = opt.methods || {}
+                for (let key in this.$data){
+                    Object.defineProperty(this,key,{
+                        enumerable:true,
+                        configurable:true,
+                        get:()=>{
+                            return this.$data[key]
+                        },
+                        set:newVal =>{
+                            this.$data[key] = newVal
+                        }
+                    })
+                }
+                for(let key in this.$methods){//让 this.$methods 里面的函数中的 this，都指向当前的 this，也就是 vm
+                    this.$methods[key] = this.$methods[key].bind(this)
+                }
             }
             compile() {
                 this.traverse(this.$el)   //遍历一遍
             }
             traverse(node) {
-                if (node.nodeType === 1) {
+                if (node.nodeType === 1) {  //元素节点，我都要看看，里面有没有指令
                     this.renderNode(node)
                     node.childNodes.forEach((childNode) => {
                         this.traverse(childNode)
@@ -134,23 +150,37 @@
                 }
             }
             //处理指令
-            renderNode(node){
-                let attrs = [...node.attributes]
-                attrs.forEach(attr=>{  //attr.name 是属性的名字 如v-model attr.value就是name
-                    if(this.isDirective(attr.name)){
-                        let key =attr.value
-                        node.value = this.$data[key]
-                        new Observer(this,key,function(newVal){
-                            node.nodeValue = newVal
-                        })
-                        node.oninput = (e)=>{
-                            this.$data[key] = e.target.value
-                        }
+            renderNode(node) {
+                let attrs = [...node.attributes] //类数组对象转换成对象
+                attrs.forEach(attr => {  //attr.name 是属性的名字 如v-model ,attr.value就是name
+                    if (this.isModelDirective(attr.name)) {
+                        this.bindModel(node, attr)
+                    }
+                    else if (this.isEventDirective(attr.name)) {
+                        this.bindEventHandler(node, attr)
                     }
                 })
             }
-            isDirective(attrName){
+            bindModel(node, attr) {
+                let key = attr.value
+                node.value = this.$data[key]
+                new Observer(this, key, function (newVal) {
+                    node.nodeValue = newVal
+                })
+                node.oninput = (e) => {
+                    this.$data[key] = e.target.value
+                }
+            }
+            bindEventHandler(node, attr) {
+                let eventType = attr.name.substr(5)   //attr.name='v-on:click' attr.value = 'sayHi'
+                let methodName = attr.value
+                node.addEventListener(eventType, this.$methods[methodName])
+            }
+            isDirective(attrName) {
                 return attrName === 'v-model'
+            }
+            isEventDirective(attrName) {
+                return attrName.indexOf('v-on') === 0
             }
         }          //mvvm框架，主要是查找并且替换
 
@@ -160,10 +190,18 @@
             data: {
                 name: 'jirengu',
                 age: 3
+            },
+            methods: {
+                sayHi() {
+                    alert(`hi ${this.name}`)
+                }
             }
         })
-        setInterval(function () {
-            vm.$data.age++
+
+        let clock = setInterval(function () {
+            vm.age++   //等同于 vm.$data.age， 见 mvvm init 方法内的数据劫持
+
+            if (vm.age === 10) clearInterval(clock)
         }, 1000)
     </script>
 </body>
