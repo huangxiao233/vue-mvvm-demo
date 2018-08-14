@@ -8,7 +8,7 @@
 
 <div id="app" >
   <input v-model="name" v-on:click="sayHi" type="text">
-  <h1>{{name}} 's salary is {{salary}}k</h1>
+  <h1>{{name}} 's salary is {{salary}} k</h1>
 </div>
 
 <script>
@@ -219,7 +219,7 @@ let vm = new mvvm({
 let clock = setInterval(function(){
   vm.salary++   //等同于 vm.$data.salary， 见 mvvm init 方法内的数据劫持
 
-  if(vm.salary=== 10000) clearInterval(clock)
+  if(vm.salary=== 100000) clearInterval(clock)
 }, 1000)
 
 
