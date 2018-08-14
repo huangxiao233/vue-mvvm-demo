@@ -207,7 +207,7 @@ let vm = new mvvm({
   el: '#app',
   data: { 
     name: 'huangxiao',
-    age: 3
+    salary: 3
   },
   methods: {
     sayHi(){
@@ -217,9 +217,9 @@ let vm = new mvvm({
 })
 
 let clock = setInterval(function(){
-  vm.age++   //等同于 vm.$data.age， 见 mvvm init 方法内的数据劫持
+  vm.salary++   //等同于 vm.$data.salary， 见 mvvm init 方法内的数据劫持
 
-  if(vm.age === 10) clearInterval(clock)
+  if(vm.salary=== 10) clearInterval(clock)
 }, 1000)
 
 
